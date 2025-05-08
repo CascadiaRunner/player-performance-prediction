@@ -31,6 +31,7 @@ coverage.xml
 # Environment variables
 .env
 .env.local
+kaggle.json
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -57,4 +58,7 @@ coverage.xml
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Data directory
+data/ 
