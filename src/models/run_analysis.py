@@ -4,7 +4,8 @@ Script to demonstrate Bayesian player performance analysis.
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from .player_performance import PlayerPerformance, HierarchicalPlayerPerformance
+from src.models.player_performance import PlayerPerformance, HierarchicalPlayerPerformance
+from src.visualization.plot_performance import create_performance_report
 
 def run_basic_analysis(player_data: pd.DataFrame) -> None:
     """
@@ -59,26 +60,31 @@ def run_hierarchical_analysis(player_data: pd.DataFrame,
     # Create output directory
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
-    # Get estimates for each player
+    # Get qualified players (those with sufficient minutes)
+    qualified_players = model.get_qualified_players()
+    print(f"\nPlayers with sufficient minutes (≥{model.min_minutes}): {len(qualified_players)}")
+    print(f"Total players in dataset: {len(player_data['player_api_id'].unique())}")
+    
+    # Get estimates for each qualified player
     results = []
-    for player_id in player_data['player_api_id'].unique():
-        estimates = model.get_player_estimates(player_id)
-        player_name = player_data[player_data['player_api_id'] == player_id]['player_name'].iloc[0]
-        
-        results.append({
-            'player_id': player_id,
-            'player_name': player_name,
-            'mean_goals_per_90': estimates['mean'],
-            'std_goals_per_90': estimates['std'],
-            'ci_lower': estimates['ci_lower'],
-            'ci_upper': estimates['ci_upper']
-        })
-        
-        # Plot posterior for each player
-        model.plot_posterior(
-            player_id,
-            save_path=f"{output_dir}/posterior_{player_id}.png"
-        )
+    for player_id in qualified_players:
+        try:
+            estimates = model.get_player_estimates(player_id)
+            player_name = player_data[player_data['player_api_id'] == player_id]['player_name'].iloc[0]
+            minutes_played = player_data[player_data['player_api_id'] == player_id]['minutes_played'].sum()
+            
+            results.append({
+                'player_id': player_id,
+                'player_name': player_name,
+                'minutes_played': minutes_played,
+                'mean_goals_per_90': estimates['mean'],
+                'std_goals_per_90': estimates['std'],
+                'ci_lower': estimates['ci_lower'],
+                'ci_upper': estimates['ci_upper']
+            })
+        except Exception as e:
+            print(f"Error processing player {player_id}: {str(e)}")
+            continue
     
     # Save results
     results_df = pd.DataFrame(results)
@@ -88,6 +94,15 @@ def run_hierarchical_analysis(player_data: pd.DataFrame,
     print(f"Results saved to {output_dir}/")
     print("\nTop 5 players by expected goals per 90:")
     print(results_df.sort_values('mean_goals_per_90', ascending=False).head())
+    
+    # Print summary statistics
+    print("\nSummary Statistics:")
+    print(f"Mean goals per 90: {results_df['mean_goals_per_90'].mean():.4f}")
+    print(f"Median goals per 90: {results_df['mean_goals_per_90'].median():.4f}")
+    print(f"Standard deviation: {results_df['mean_goals_per_90'].std():.4f}")
+    
+    # Create performance report visualizations
+    create_performance_report(results_df, output_dir)
 
 def main():
     """Run the complete analysis."""
