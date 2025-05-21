@@ -6,6 +6,11 @@ This project uses Bayesian inference to estimate a player's true skill level in 
 
 How can we use Bayesian inference to estimate a player's true skill level?
 
+## Data Source
+
+Kaggle’s European Soccer Database 
+https://www.kaggle.com/datasets/hugomathien/soccer
+
 ## Methodology
 
 ### Bayesian Framework
