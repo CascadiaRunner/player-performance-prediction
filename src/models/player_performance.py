@@ -146,7 +146,59 @@ class HierarchicalPlayerPerformance:
         self.league_std = league_std
         self.min_minutes = min_minutes
         self.player_models = {}
+        self.player_history = {}  # Store player's historical performance
         
+        # Position-specific prior adjustments
+        self.position_priors = {
+            'forward': {'mean_multiplier': 1.5, 'std_multiplier': 1.2},
+            'midfielder': {'mean_multiplier': 0.8, 'std_multiplier': 1.1},
+            'defender': {'mean_multiplier': 0.4, 'std_multiplier': 1.3}
+        }
+        
+    def _infer_position(self, goals_per_90: float) -> str:
+        """
+        Infer player position based on goal-scoring rate.
+        
+        Args:
+            goals_per_90: Player's goals per 90 minutes
+            
+        Returns:
+            Inferred position ('forward', 'midfielder', or 'defender')
+        """
+        if goals_per_90 > 0.5:  # High scoring rate suggests forward
+            return 'forward'
+        elif goals_per_90 > 0.2:  # Moderate scoring rate suggests midfielder
+            return 'midfielder'
+        else:  # Low scoring rate suggests defender
+            return 'defender'
+    
+    def _calculate_development_factor(self, player_id: int, current_goals: float, current_minutes: float) -> float:
+        """
+        Calculate player development factor based on historical performance.
+        
+        Args:
+            player_id: Player ID
+            current_goals: Current season goals
+            current_minutes: Current season minutes
+            
+        Returns:
+            Development factor (1.0 means no change, >1.0 means improvement, <1.0 means decline)
+        """
+        if player_id not in self.player_history:
+            return 1.0  # No history available
+            
+        historical_goals_per_90 = self.player_history[player_id]['goals_per_90']
+        current_goals_per_90 = (current_goals * 90) / current_minutes
+        
+        # Calculate development factor based on performance change
+        if historical_goals_per_90 == 0:
+            return 1.0 if current_goals_per_90 == 0 else 1.2  # Assume improvement if scoring for first time
+            
+        development_factor = current_goals_per_90 / historical_goals_per_90
+        
+        # Cap the development factor to reasonable bounds
+        return max(0.5, min(2.0, development_factor))
+    
     def fit(self, player_data: Dict[str, np.ndarray]) -> None:
         """
         Fit the hierarchical model using empirical Bayes.
@@ -159,8 +211,21 @@ class HierarchicalPlayerPerformance:
         """
         unique_players = np.unique(player_data['player_ids'])
         
+        # First pass: calculate historical performance
         for player_id in unique_players:
-            # Get player's data
+            mask = player_data['player_ids'] == player_id
+            goals = player_data['goals'][mask]
+            minutes = player_data['minutes'][mask]
+            
+            if minutes.sum() >= self.min_minutes:
+                goals_per_90 = (goals.sum() * 90) / minutes.sum()
+                self.player_history[player_id] = {
+                    'goals_per_90': goals_per_90,
+                    'minutes': minutes.sum()
+                }
+        
+        # Second pass: fit models with position-specific priors
+        for player_id in unique_players:
             mask = player_data['player_ids'] == player_id
             goals = player_data['goals'][mask]
             minutes = player_data['minutes'][mask]
@@ -168,10 +233,32 @@ class HierarchicalPlayerPerformance:
             # Skip players with insufficient minutes
             if minutes.sum() < self.min_minutes:
                 continue
-                
-            # Calculate empirical Bayes prior
-            alpha = (self.league_mean ** 2) * (1 - self.league_mean) / (self.league_std ** 2)
-            beta = alpha * (1 / self.league_mean - 1)
+            
+            # Calculate goals per 90 for position inference
+            goals_per_90 = (goals.sum() * 90) / minutes.sum()
+            position = self._infer_position(goals_per_90)
+            
+            # Get position-specific prior adjustments
+            position_prior = self.position_priors[position]
+            adjusted_mean = self.league_mean * position_prior['mean_multiplier']
+            adjusted_std = self.league_std * position_prior['std_multiplier']
+            
+            # Calculate development factor
+            dev_factor = self._calculate_development_factor(player_id, goals.sum(), minutes.sum())
+            
+            # Calculate base prior parameters
+            # Ensure mean is between 0 and 1 for Beta distribution
+            adjusted_mean = max(0.01, min(0.99, adjusted_mean))
+            
+            # Calculate alpha and beta ensuring they're positive
+            alpha = (adjusted_mean ** 2) * (1 - adjusted_mean) / (adjusted_std ** 2)
+            beta = alpha * (1 / adjusted_mean - 1)
+            
+            # Apply development factor while maintaining valid Beta parameters
+            # Scale both parameters proportionally to maintain the mean
+            scale_factor = dev_factor
+            alpha = max(0.1, alpha * scale_factor)
+            beta = max(0.1, beta * (2 - scale_factor))
             
             # Create and fit player model
             model = PlayerPerformance(prior_alpha=alpha, prior_beta=beta, min_minutes=self.min_minutes)
