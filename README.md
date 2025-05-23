@@ -1,140 +1,114 @@
-# Bayesian Player Performance Analysis
+# Bayesian Player Performance Analysis: A New Era in Soccer Analytics
 
-This project uses Bayesian inference to estimate a player's true skill level in soccer, specifically focusing on goal-scoring ability. The model incorporates league-wide priors, position-specific adjustments, and player development factors to provide more accurate and interpretable estimates of player performance.
+## Introduction
 
-## Research Question
-
-How can we use Bayesian inference to estimate a player's true skill level?
+Traditional soccer statistics like goals scored and minutes played provide only a partial view of player performance. They often ignore uncertainty and the context in which players perform. This project leverages Bayesian inference to deliver a more nuanced, actionable, and robust evaluation of soccer players, focusing on goal-scoring ability while accounting for league quality, position, and player development.
 
 ## Data Source
 
-Kaggle’s European Soccer Database 
+Kaggle's European Soccer Database  
 https://www.kaggle.com/datasets/hugomathien/soccer
+
+## Why Bayesian Inference?
+
+Unlike frequentist methods, which treat player performance as a fixed value, Bayesian inference:
+- **Quantifies Uncertainty:** Provides credible intervals, not just point estimates
+- **Integrates Prior Knowledge:** Accounts for league, position, and historical performance
+- **Adapts to New Data:** Updates beliefs as new data arrives
+
+This means we can make smarter, more confident decisions—whether scouting, managing a team, or playing fantasy sports.
 
 ## Methodology
 
-### Bayesian Framework
+### Hierarchical Bayesian Model
 
-The model uses a hierarchical Bayesian approach with three main components:
+Our model has three key components:
 
 1. **League-wide Priors**
-   - Captures overall league quality
-   - Accounts for different scoring environments
-   - Provides baseline expectations
+   - Captures overall league quality and scoring environment
+   - Provides baseline expectations for each player
 
 2. **Position-specific Adjustments**
-   - Forward: 1.5x base rate
-   - Midfielder: 0.8x base rate
-   - Defender: 0.4x base rate
+   - Forwards: 1.5x base rate
+   - Midfielders: 0.8x base rate
+   - Defenders: 0.4x base rate
 
 3. **Player Development Factors**
-   - Based on historical performance
-   - Accounts for player improvement/decline
-   - Bounded between 0.5 and 2.0
+   - Tracks improvement or decline over time (bounded 0.5 to 2.0)
+   - Captures player trajectory and breakout seasons
 
-### Model Performance
+### Data Preparation
+- Players must have at least 540 minutes played (6 full matches) for inclusion
+- Goals per 90 minutes is calculated as `(goals * 90) / minutes_played`
+- Position is inferred from scoring rate
+- Player development is tracked by comparing current and historical performance
 
-The model shows strong performance across multiple leagues:
-
-1. **Best Performing Leagues**:
-   - Spain LIGA BBVA (R² = 0.4796)
-   - France Ligue 1 (R² = 0.2885)
-   - Italy Serie A (R² = 0.2283)
-
-2. **Error Analysis**:
-   - Mean Absolute Error typically between 0.35-0.52 goals per 90
-   - Most predictions within 0.5 goals of actual performance
-   - Consistent performance across different leagues
-
-## Key Findings
-
-1. **League Impact**
-   - Different leagues show varying levels of predictability
-   - Spain and France show highest predictive power
-   - Poland and Switzerland show lower predictability
-
-2. **Position Effects**
-   - Position-specific adjustments significantly improve predictions
-   - Forwards show highest variance in performance
-   - Defenders show most consistent predictions
-
-3. **Development Factors**
-   - Young players show higher development potential
-   - Established players show more stable predictions
-   - Development factors help capture breakout seasons
+### Model Fitting and Evaluation
+- Uses a Beta-Binomial conjugate prior for efficient updates
+- Evaluates performance by league, position, and over time
+- Provides credible intervals for every estimate
 
 ## Visualizations
 
-The project includes several visualizations to explain the Bayesian inference process:
+### 1. League Performance Comparison
+![League Performance](results/league_performance.png)
+*R² scores by league show varying levels of predictability*
 
-1. **League Prior Distribution**
-   - Shows baseline goal-scoring rates by league
-   - Includes error bars for uncertainty
-   - Helps understand league-specific contexts
-   
-   ![League Priors](results/league_priors.png)
+### 2. Position-specific Adjustments
+![Position Priors](results/position_priors.png)
+*Different expectations for different positions*
 
-2. **Position-specific Adjustments**
-   - Visualizes the impact of position on predictions
-   - Shows relative scoring expectations
-   - Helps understand role-based differences
-   
-   ![Position Priors](results/position_priors.png)
+### 3. Player Development Factors
+![Development Factors](results/development_factors.png)
+*Distribution of player development trajectories*
 
-3. **Player Development Factors**
-   - Distribution of development factors
-   - Shows range of player improvement/decline
-   - Helps understand player trajectories
-   
-   ![Development Factors](results/development_factors.png)
+### 4. Uncertainty Distribution
+![Uncertainty Distribution](results/uncertainty_distribution.png)
+*Histogram of uncertainty in player estimates*
 
-4. **Model Performance by League**
-   - R² scores across different leagues
-   - Shows predictive power by context
-   - Helps identify model strengths/weaknesses
-   
-   ![League Performance](results/league_performance.png)
-
-5. **Error Distribution**
-   - Mean Absolute Error by league
-   - Shows prediction accuracy
-   - Helps understand model reliability
-   
-   ![Error Distribution](results/error_distribution.png)
+### 5. Top Players Ranking
+![Top Players](results/top_players.png)
+*Top players by expected goals per 90, with credible intervals*
 
 ## Practical Applications
 
-1. **Player Evaluation**
-   - More accurate assessment of true ability
-   - Better understanding of performance context
-   - Improved comparison across leagues
+### Scouting and Recruitment
+- Identify players outperforming their league's baseline
+- Adjust expectations for league and position
+- Example: A forward with 0.4 goals/90 in La Liga may be more valuable than one with 0.6 in a weaker league
 
-2. **Performance Prediction**
-   - More reliable future performance estimates
-   - Better accounting for development
-   - More accurate uncertainty quantification
+### Fantasy Sports
+- High-certainty players (narrow intervals) are safer picks
+- High-variance players (wide intervals) are high-risk, high-reward
+- Position and development factors inform draft strategy
 
-3. **Talent Identification**
-   - Better identification of true potential
-   - More accurate assessment of development
-   - Improved comparison of young players
+### Player Development
+- Track improvement or decline over time
+- Identify breakout candidates and declining veterans
 
-## Future Improvements
+### Team Management
+- Set realistic expectations
+- Optimize player roles and substitutions
+- Make informed transfer and contract decisions
 
-1. **Model Enhancements**
-   - More sophisticated position inference
-   - Additional development factors
-   - League-specific adjustments
+## What Bayesian Inference Adds
 
-2. **Feature Additions**
-   - Team quality metrics
-   - Playing style factors
-   - Injury history integration
+- **Uncertainty is explicit:** Every estimate comes with a credible interval, helping you understand the risk in every decision.
+- **Context matters:** League, position, and player history are all factored in, making comparisons fairer and more actionable.
+- **Better predictions:** Bayesian models adapt as new data arrives, improving over time.
 
-3. **Analysis Extensions**
-   - Additional performance metrics
-   - More detailed uncertainty analysis
-   - Comparative analysis with other methods
+## Key Results
+
+- **League Impact:** Spain's La Liga shows highest predictability (R² = 0.4796); Poland and Switzerland are more unpredictable
+- **Position Effects:** Forwards have the highest variance; defenders are most consistent
+- **Performance Metrics:** Mean Absolute Error typically 0.35–0.52 goals per 90; most predictions within 0.5 goals of actual performance
+
+## Future Directions
+
+- Integrate team quality, playing style, and injury history
+- Add advanced metrics (expected goals, assists, defensive actions)
+- Analyze temporal trends (form streaks, home/away splits)
+- Automate scouting reports and transfer value estimation
 
 ## Getting Started
 
@@ -142,12 +116,10 @@ The project includes several visualizations to explain the Bayesian inference pr
    ```bash
    pip install -r requirements.txt
    ```
-
 2. Run the analysis:
    ```bash
    python -m src.models.run_analysis
    ```
-
 3. View results in the `results` directory
 
 ## Contributing
