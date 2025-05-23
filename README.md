@@ -1,4 +1,4 @@
-# Bayesian Player Performance Analysis: A New Era in Soccer Analytics
+# Bayesian Player Performance Analysis: Soccer Analytics in Europe (2008-2016)
 
 ## Introduction
 
@@ -62,11 +62,7 @@ Our model has three key components:
 ![Development Factors](results/development_factors.png)
 *Distribution of player development trajectories*
 
-### 4. Uncertainty Distribution
-![Uncertainty Distribution](results/uncertainty_distribution.png)
-*Histogram of uncertainty in player estimates*
-
-### 5. Top Players Ranking
+### 4. Top Players Ranking
 ![Top Players](results/top_players.png)
 *Top players by expected goals per 90, with credible intervals*
 
